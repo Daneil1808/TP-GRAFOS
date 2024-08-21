@@ -67,11 +67,11 @@ public class Main {
 
         // Execução das funções solicitadas e impressão dos resultados
         // Verifica se o grafo é conexo
-        System.out.println(verificarConexo(listaAdjacencia, vertices) ? "1" : "0");
+        System.out.println(verificarConexo(listaAdjacencia, vertices, isDirecionado) ? "1" : "0");
         // Verifica se o grafo é bipartido
-        System.out.println(verificarBipartido(listaAdjacencia) ? "1" : "0");
+        System.out.println(verificarBipartido(listaAdjacencia, isDirecionado) ? "1" : "0");
         // Verifica se o grafo é euleriano
-        System.out.println(verificarEuleriano(listaAdjacencia) ? "1" : "0");
+        System.out.println(verificarEuleriano(listaAdjacencia, isDirecionado) ? "1" : "0");
         // Verifica se o grafo possui ciclo
         System.out.println(possuiCiclo(listaAdjacencia) ? "1" : "0");
         // Lista os componentes conexos do grafo
@@ -79,7 +79,7 @@ public class Main {
         // Lista os componentes fortemente conexos, se o grafo for direcionado; caso contrário, imprime -1
         System.out.println(isDirecionado ? formatarListasEncadeadas(listarComponentesFortementeConexas(listaAdjacencia)) : "-1");
         // Lista a trilha euleriana, se existir
-        System.out.println(listarTrilhaEuleriana(listaAdjacencia));
+        System.out.println(listarTrilhaEuleriana(listaAdjacencia, isDirecionado));
         // Lista os vértices de articulação do grafo
         System.out.println(listarVerticesArticulacao(listaAdjacencia));
         // Lista as arestas ponte do grafo
@@ -104,73 +104,141 @@ public class Main {
         scanner.close();
     }
 
-
-    // Função para verificar se o grafo é conexo usando BFS
-    public static Boolean verificarConexo(Map<Integer, List<Integer>> listaAdjacencia, Set<Integer> vertices) {
+    // Função para verificar se o grafo é conexo
+    public static Boolean verificarConexo(Map<Integer, List<Integer>> listaAdjacencia, Set<Integer> vertices, boolean isDirecionado) {
         if (vertices.isEmpty()) {
             return true; // Considerar grafo vazio como conexo
         }
 
-        Set<Integer> visitados = new HashSet<>();
-        Queue<Integer> fila = new LinkedList<>();
-
-        // Pegando um vértice inicial arbitrário
+        // Função auxiliar para fazer a BFS e alcançar todos os vértices
+        Set<Integer> bfsVisitados = new HashSet<>();
+        Queue<Integer> bfsFila = new LinkedList<>();
         int verticeInicial = vertices.iterator().next();
-        fila.add(verticeInicial);
-        visitados.add(verticeInicial);
+        bfsFila.add(verticeInicial);
+        bfsVisitados.add(verticeInicial);
 
-        // Realiza a BFS
-        while (!fila.isEmpty()) {
-            int vertice = fila.poll();
+        // Realiza a BFS a partir do vértice inicial
+        while (!bfsFila.isEmpty()) {
+            int vertice = bfsFila.poll();
             for (int vizinho : listaAdjacencia.getOrDefault(vertice, new ArrayList<>())) {
-                if (!visitados.contains(vizinho)) {
-                    visitados.add(vizinho);
-                    fila.add(vizinho);
+                if (!bfsVisitados.contains(vizinho)) {
+                    bfsVisitados.add(vizinho);
+                    bfsFila.add(vizinho);
                 }
             }
         }
 
-        // Verifica se todos os vértices foram visitados
-        return visitados.size() == vertices.size();
+        if (!isDirecionado) {
+            // Verificação para grafos não direcionados
+            return bfsVisitados.size() == vertices.size(); // Se todos os vértices foram visitados, o grafo é conexo
+        } else {
+            // Verificação para grafos direcionados
+            // Verifica a conectividade direta
+            if (bfsVisitados.size() != vertices.size()) {
+                return false; // Se nem todos os vértices foram visitados, o grafo não é conexo
+            }
+
+            // Inverte as arestas para verificar a conectividade em sentido reverso
+            Map<Integer, List<Integer>> listaAdjacenciaInversa = new HashMap<>();
+            for (int vertice : listaAdjacencia.keySet()) {
+                listaAdjacenciaInversa.putIfAbsent(vertice, new ArrayList<>());
+                for (int vizinho : listaAdjacencia.get(vertice)) {
+                    listaAdjacenciaInversa.putIfAbsent(vizinho, new ArrayList<>());
+                    listaAdjacenciaInversa.get(vizinho).add(vertice);
+                }
+            }
+
+            Set<Integer> visitadosInverso = new HashSet<>();
+            Queue<Integer> filaInversa = new LinkedList<>();
+            filaInversa.add(verticeInicial);
+            visitadosInverso.add(verticeInicial);
+
+            // Realiza a BFS no grafo com arestas invertidas
+            while (!filaInversa.isEmpty()) {
+                int vertice = filaInversa.poll();
+                for (int vizinho : listaAdjacenciaInversa.getOrDefault(vertice, new ArrayList<>())) {
+                    if (!visitadosInverso.contains(vizinho)) {
+                        visitadosInverso.add(vizinho);
+                        filaInversa.add(vizinho);
+                    }
+                }
+            }
+
+            // Verifica a conectividade reversa
+            return visitadosInverso.size() == vertices.size(); // Se todos os vértices foram visitados no grafo inverso, é fortemente conexo
+        }
     }
 
-    // Função para verificar se o grafo é bipartido usando BFS
-    public static Boolean verificarBipartido(Map<Integer, List<Integer>> listaAdjacencia) {
+    // Função para verificar se o grafo é bipartido
+    public static Boolean verificarBipartido(Map<Integer, List<Integer>> listaAdjacencia, boolean isDirecionado) {
+        if (isDirecionado) {
+            return false; // Bipartição não é aplicável para grafos direcionados
+        }
+
+        // Mapa para armazenar a cor de cada vértice
         Map<Integer, Integer> cores = new HashMap<>();
 
         for (int vertice : listaAdjacencia.keySet()) {
+            // Se o vértice ainda não foi visitado
             if (!cores.containsKey(vertice)) {
                 Queue<Integer> fila = new LinkedList<>();
                 fila.add(vertice);
-                cores.put(vertice, 0);
+                cores.put(vertice, 0); // Atribui a cor 0 ao vértice inicial
 
                 while (!fila.isEmpty()) {
                     int atual = fila.poll();
                     for (int vizinho : listaAdjacencia.get(atual)) {
                         if (!cores.containsKey(vizinho)) {
+                            // Atribui a cor oposta ao vizinho
                             cores.put(vizinho, 1 - cores.get(atual));
                             fila.add(vizinho);
                         } else if (cores.get(vizinho).equals(cores.get(atual))) {
+                            // Se um vizinho tem a mesma cor que o vértice atual, o grafo não é bipartido
                             return false;
                         }
                     }
                 }
             }
         }
-        return true;
+        return true; // O grafo é bipartido se não houver conflitos de cores
     }
 
     // Função para verificar se o grafo é Euleriano
-    public static Boolean verificarEuleriano(Map<Integer, List<Integer>> listaAdjacencia) {
-        int impares = 0;
+    public static Boolean verificarEuleriano(Map<Integer, List<Integer>> listaAdjacencia, boolean isDirecionado) {
+        if (isDirecionado) {
+            // Verifica se o grafo é euleriano (direcionado)
+            Map<Integer, Integer> grauEntrada = new HashMap<>();
+            Map<Integer, Integer> grauSaida = new HashMap<>();
 
-        for (int vertice : listaAdjacencia.keySet()) {
-            if (listaAdjacencia.get(vertice).size() % 2 != 0) {
-                impares++;
+            // Calcula o grau de entrada e o grau de saída de cada vértice
+            for (int vertice : listaAdjacencia.keySet()) {
+                grauSaida.put(vertice, listaAdjacencia.get(vertice).size());
+                for (int vizinho : listaAdjacencia.get(vertice)) {
+                    grauEntrada.put(vizinho, grauEntrada.getOrDefault(vizinho, 0) + 1);
+                }
             }
-        }
 
-        return impares == 0; // Euleriano se todos os vértices têm grau par
+            // Verifica se o grau de entrada é igual ao grau de saída para cada vértice
+            for (int vertice : listaAdjacencia.keySet()) {
+                if (!grauEntrada.getOrDefault(vertice, 0).equals(grauSaida.get(vertice))) {
+                    return false; // Se houver vértices com grau de entrada diferente do grau de saída, o grafo não é euleriano
+                }
+            }
+
+            return true; // O grafo é euleriano se todos os vértices tiverem grau de entrada igual ao grau de saída
+        } else {
+            // Verifica se o grafo é euleriano (não direcionado)
+            int impares = 0;
+
+            // Conta o número de vértices com grau ímpar
+            for (int vertice : listaAdjacencia.keySet()) {
+                if (listaAdjacencia.get(vertice).size() % 2 != 0) {
+                    impares++;
+                }
+            }
+
+            return impares == 0; // O grafo é euleriano se todos os vértices tiverem grau par
+        }
     }
 
     // Função para verificar se o grafo possui ciclo usando DFS
@@ -335,10 +403,9 @@ public class Main {
         return grafoTransposto;
     }
 
-
     // Função para listar uma trilha Euleriana
-    public static String listarTrilhaEuleriana(Map<Integer, List<Integer>> listaAdjacencia) {
-        if (!verificarEuleriano(listaAdjacencia)) {
+    public static String listarTrilhaEuleriana(Map<Integer, List<Integer>> listaAdjacencia, boolean isDirecionado) {
+        if (!verificarEuleriano(listaAdjacencia, isDirecionado)) {
             return "-1";
         }
 
@@ -733,27 +800,40 @@ public class Main {
 
     // Função para verificar se é possível calcular o caminho mínimo entre dois vértices
     private static Boolean podeCalcularCaminhoMinimo(Map<Integer, List<Integer>> adj, int origem, int destino) {
-        if (origem == destino) return true; // Caminho trivial se origem e destino são o mesmo vértice
+        // Verifica se a origem e o destino são o mesmo vértice
+        if (origem == destino) {
+            return true; // Um vértice pode sempre alcançar a si mesmo
+        }
 
+        // Conjunto para rastrear quais vértices foram visitados
         Set<Integer> visitados = new HashSet<>();
+        // Fila para implementar a busca em largura (BFS)
         Queue<Integer> fila = new LinkedList<>();
+
+        // Adiciona o vértice de origem à fila e marca como visitado
         fila.add(origem);
         visitados.add(origem);
 
+        // Executa a busca em largura para encontrar o destino
         while (!fila.isEmpty()) {
+            // Remove um vértice da fila para processar
             int verticeAtual = fila.poll();
 
+            // Verifica se o vértice atual é o destino
             if (verticeAtual == destino) {
-                return true;
+                return true; // Encontrou o destino, caminho mínimo é possível
             }
 
+            // Adiciona todos os vizinhos do vértice atual à fila se não foram visitados
             for (int vizinho : adj.getOrDefault(verticeAtual, Collections.emptyList())) {
                 if (!visitados.contains(vizinho)) {
-                    visitados.add(vizinho);
-                    fila.add(vizinho);
+                    visitados.add(vizinho); // Marca o vizinho como visitado
+                    fila.add(vizinho); // Adiciona o vizinho à fila para processamento futuro
                 }
             }
         }
+
+        // Se sair do loop e não encontrar o destino, não é possível calcular o caminho mínimo
         return false;
     }
 
