@@ -2,8 +2,9 @@ import java.util.*;
 
 /**
  * Classe principal que contém o método principal para executar o programa.
- * O programa lê a entrada do usuário, constrói o grafo e executa diversas operações sobre ele,
- * como verificação de conectividade, bipartição, eulerianidade, entre outros.
+ * O programa lê a entrada do usuário, constrói o grafo e executa as funções do trabalho prático,
+ * Daniel Assis Gonçalves
+ * Franciele Rodrigues Ferreira
  */
 public class Main {
 
@@ -16,34 +17,43 @@ public class Main {
         // Cria um Scanner para ler a entrada do usuário
         Scanner scanner = new Scanner(System.in);
 
-        // Leitura do número de vértices e arestas
-        int numVertices = scanner.nextInt(); // Lê o número de vértices do grafo
-        int numArestas = scanner.nextInt(); // Lê o número de arestas do grafo
-        scanner.nextLine(); // Consome a quebra de linha após os inteiros
+        // Leitura da lista de funções a serem executadas
+        List<Integer> funcoes = new ArrayList<>();
+        String linhaFuncoes = scanner.nextLine().trim();
+        Scanner linhaScanner = new Scanner(linhaFuncoes);
+        while (linhaScanner.hasNextInt()) {
+            funcoes.add(linhaScanner.nextInt());
+        }
+        linhaScanner.close();
+
+        int numVertices = 0;
+        int numArestas = 0;
+        if(scanner.hasNextInt()) {
+            // Leitura do número de vértices e arestas
+            numVertices = scanner.nextInt(); // Lê o número de vértices do grafo
+            numArestas = scanner.nextInt(); // Lê o número de arestas do grafo
+            scanner.nextLine(); // Consome a quebra de linha após os inteiros
+        }
 
         // Leitura do tipo de grafo (direcionado ou não)
         String tipoGrafo = scanner.nextLine().trim(); // Lê a linha contendo o tipo do grafo e remove espaços em branco
         boolean isDirecionado = tipoGrafo.equals("direcionado"); // Define se o grafo é direcionado ou não
 
         // Inicialização das estruturas de dados
-        // Mapeia vértices para suas listas de adjacência
         Map<Integer, List<Integer>> listaAdjacencia = new HashMap<>();
-        // Mapeia arestas (representadas como pares de vértices) para seus pesos
         Map<List<Integer>, Integer> pesos = new HashMap<>();
-        // Mapeia arestas (representadas como pares de vértices) para seus IDs
         Map<List<Integer>, Integer> idsArestas = new HashMap<>();
-        // Conjunto de todos os vértices do grafo
         Set<Integer> vertices = new HashSet<>();
 
         // Inicializa a lista de adjacência para cada vértice e adiciona todos os vértices ao conjunto
         for (int i = 0; i < numVertices; i++) {
-            listaAdjacencia.put(i, new ArrayList<>()); // Cada vértice tem uma lista de adjacência inicializada como uma lista vazia
+            listaAdjacencia.put(i, new ArrayList<>()); // Inicializa cada vértice com uma lista vazia
             vertices.add(i); // Adiciona o vértice ao conjunto de vértices
         }
 
         // Leitura das arestas e suas informações
         for (int i = 0; i < numArestas; i++) {
-            if (scanner.hasNextInt()) { // Verifica se há mais inteiros para ler
+            if (scanner.hasNextInt()) {
                 int idAresta = scanner.nextInt(); // Lê o ID da aresta
                 int verticeU = scanner.nextInt(); // Lê o vértice de origem da aresta
                 int verticeV = scanner.nextInt(); // Lê o vértice de destino da aresta
@@ -51,67 +61,120 @@ public class Main {
                 scanner.nextLine(); // Consome a quebra de linha após os inteiros
 
                 // Adiciona a aresta à lista de adjacência do vértice de origem
-                if (listaAdjacencia.containsKey(verticeU)) {
-                    listaAdjacencia.get(verticeU).add(verticeV);
-                } else {
-                    listaAdjacencia.put(verticeU, new ArrayList<>(Collections.singletonList(verticeV)));
-                }
+                listaAdjacencia.get(verticeU).add(verticeV);
 
                 // Se o grafo não é direcionado, adiciona também a aresta no sentido inverso
                 if (!isDirecionado) {
-                    if (listaAdjacencia.containsKey(verticeV)) {
-                        listaAdjacencia.get(verticeV).add(verticeU);
-                    } else {
-                        listaAdjacencia.put(verticeV, new ArrayList<>(Collections.singletonList(verticeU)));
-                    }
+                    listaAdjacencia.get(verticeV).add(verticeU);
                 }
 
                 // Adiciona o peso e o ID da aresta no mapa de pesos e IDs
-                pesos.put(Arrays.asList(verticeU, verticeV), pesoAresta);
-                idsArestas.put(Arrays.asList(verticeU, verticeV), idAresta);
+                List<Integer> aresta = Arrays.asList(verticeU, verticeV);
+                pesos.put(aresta, pesoAresta);
+                idsArestas.put(aresta, idAresta);
                 if (!isDirecionado) {
-                    pesos.put(Arrays.asList(verticeV, verticeU), pesoAresta); // Adiciona o peso da aresta no sentido inverso para grafos não direcionados
-                    idsArestas.put(Arrays.asList(verticeV, verticeU), idAresta); // Adiciona o ID da aresta no sentido inverso para grafos não direcionados
+                    List<Integer> arestaInversa = Arrays.asList(verticeV, verticeU);
+                    pesos.put(arestaInversa, pesoAresta); // Adiciona o peso da aresta no sentido inverso para grafos não direcionados
+                    idsArestas.put(arestaInversa, idAresta); // Adiciona o ID da aresta no sentido inverso para grafos não direcionados
                 }
             }
         }
 
-        // Execução das funções solicitadas e impressão dos resultados
-        // Verifica se o grafo é conexo
-        System.out.println(verificarConexo(listaAdjacencia, vertices, isDirecionado) ? "1" : "0");
-        // Verifica se o grafo é bipartido
-        System.out.println(verificarBipartido(listaAdjacencia, isDirecionado) ? "1" : "0");
-        // Verifica se o grafo é euleriano
-        System.out.println(verificarEuleriano(listaAdjacencia, isDirecionado) ? "1" : "0");
-        // Verifica se o grafo possui ciclo
-        System.out.println(possuiCiclo(listaAdjacencia) ? "1" : "0");
-        // Lista os componentes conexos do grafo
-        System.out.println(listarComponentesConexas(listaAdjacencia));
-        // Lista os componentes fortemente conexos, se o grafo for direcionado; caso contrário, imprime -1
-        System.out.println(isDirecionado ? formatarListasEncadeadas(listarComponentesFortementeConexas(listaAdjacencia)) : "-1");
-        // Lista a trilha euleriana, se existir
-        System.out.println(listarTrilhaEuleriana(listaAdjacencia, isDirecionado));
-        // Lista os vértices de articulação do grafo
-        System.out.println(listarVerticesArticulacao(listaAdjacencia));
-        // Lista as arestas ponte do grafo
-        System.out.println(listarArestasPonte(listaAdjacencia));
-        // Gera e lista a árvore de profundidade
-        System.out.println(gerarArvoreProfundidade(listaAdjacencia, idsArestas));
-        // Gera e lista a árvore de largura
-        System.out.println(gerarArvoreLargura(listaAdjacencia, idsArestas));
-        // Gera e lista a árvore geradora mínima
-        System.out.println(gerarArvoreGeradoraMinima(listaAdjacencia, pesos, idsArestas));
-        // Lista a ordenação topológica, se o grafo for direcionado; caso contrário, imprime -1
-        System.out.println(isDirecionado ? ordenarTopologicamente(listaAdjacencia) : "-1");
-        // Calcula e lista o caminho mínimo entre o vértice 0 e o vértice (numVertices - 1), se possível
-        System.out.println(!isDirecionado && podeCalcularCaminhoMinimo(listaAdjacencia, 0, numVertices - 1) ?
-                calcularCaminhoMinimo(listaAdjacencia, pesos, 0, numVertices - 1) : "-1");
-        // Calcula e lista o fluxo máximo entre o vértice 0 e o vértice (numVertices - 1), se o grafo for direcionado; caso contrário, imprime -1
-        System.out.println(isDirecionado ? calcularFluxoMaximo(listaAdjacencia, pesos, 0, numVertices - 1) : "-1");
-        // Gera e lista o fecho transitivo, se o grafo for direcionado; caso contrário, imprime -1
-        System.out.println(isDirecionado ? gerarFechoTransitivo(listaAdjacencia, 0) : "-1");
+        // Executa as funções solicitadas no trabalho prático
+        for (int funcao: funcoes) {
 
-        // Fecha o scanner para liberar os recursos
+            switch (funcao) {
+                // Verifica se o grafo é conexo
+                case 0:
+                    System.out.println(verificarConexo(listaAdjacencia, numVertices, isDirecionado) ? "1" : "0");
+                    break;
+
+                // Verifica se o grafo é bipartido
+                case 1:
+                    System.out.println(verificarBipartido(listaAdjacencia, isDirecionado) ? "1" : "0");
+                    break;
+
+                // Verifica se o grafo é euleriano
+                case 2:
+                    System.out.println(verificarEuleriano(listaAdjacencia, isDirecionado) ? "1" : "0");
+                    break;
+
+                // Verifica se o grafo possui ciclo
+                case 3:
+                    System.out.println(possuiCiclo(listaAdjacencia) ? "1" : "0");
+                    break;
+
+                // Lista os componentes conexos do grafo
+                case 4:
+                    System.out.println(listarComponentesConexas(listaAdjacencia));
+                    break;
+
+                // Lista os componentes fortemente conexos (para grafos direcionados)
+                // Imprime -1 para grafos não direcionados
+                case 5:
+                    System.out.println(isDirecionado ? listarComponentesFortementeConexas(listaAdjacencia) : "-1");
+                    break;
+
+                // Lista a trilha euleriana, se existir
+                case 6:
+                    System.out.println(listarTrilhaEuleriana(listaAdjacencia, isDirecionado));
+                    break;
+
+                // Lista os vértices de articulação do grafo
+                case 7:
+                    System.out.println(listarVerticesArticulacao(listaAdjacencia));
+                    break;
+
+                // Lista as arestas ponte do grafo
+                case 8:
+                    System.out.println(listarArestasPonte(listaAdjacencia));
+                    break;
+
+                // Gera e lista a árvore de profundidade
+                case 9:
+                    System.out.println(gerarArvoreProfundidade(listaAdjacencia, idsArestas));
+                    break;
+
+                // Gera e lista a árvore de largura
+                case 10:
+                    System.out.println(gerarArvoreLargura(listaAdjacencia, idsArestas));
+                    break;
+
+                // Gera e lista a árvore geradora mínima
+                case 11:
+                    System.out.println(gerarArvoreGeradoraMinima(listaAdjacencia, pesos, idsArestas));
+                    break;
+
+                // Lista a ordenação topológica (para grafos direcionados)
+                // Imprime -1 para grafos não direcionados
+                case 12:
+                    System.out.println(isDirecionado ? ordenarTopologicamente(listaAdjacencia) : "-1");
+                    break;
+
+                // Calcula e lista o caminho mínimo entre o vértice 0 e o vértice (numVertices - 1)
+                // Se o grafo for direcionado ou não for possível calcular, imprime -1
+                case 13:
+                    System.out.println(!isDirecionado && podeCalcularCaminhoMinimo(listaAdjacencia, 0, numVertices - 1) ?
+                            calcularCaminhoMinimo(listaAdjacencia, pesos, 0, numVertices - 1) : "-1");
+                    break;
+
+                // Calcula e lista o fluxo máximo entre o vértice 0 e o vértice (numVertices - 1)
+                // Imprime -1 para grafos não direcionados
+                case 14:
+                    System.out.println(isDirecionado ? calcularFluxoMaximo(listaAdjacencia, pesos, 0, numVertices - 1) : "-1");
+                    break;
+
+                // Gera e lista o fecho transitivo (para grafos direcionados)
+                // Imprime -1 para grafos não direcionados
+                case 15:
+                    System.out.println(isDirecionado ? gerarFechoTransitivo(listaAdjacencia, 0) : "-1");
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        //Fecha o scanner do teclado
         scanner.close();
     }
 
@@ -119,112 +182,149 @@ public class Main {
      * Verifica se o grafo é conexo.
      *
      * @param listaAdjacencia Mapa de listas de adjacência do grafo.
-     * @param vertices Conjunto de todos os vértices do grafo.
-     * @param isDirecionado Indica se o grafo é direcionado (true) ou não direcionado (false).
+     * @param numVertices Número de vértices do grafo.
      * @return true se o grafo for conexo, false caso contrário.
      */
-    public static Boolean verificarConexo(Map<Integer, List<Integer>> listaAdjacencia, Set<Integer> vertices, boolean isDirecionado) {
-        if (vertices.isEmpty()) {
-            return true; // Considerar grafo vazio como conexo
-        }
+    private static Boolean verificarConexo(Map<Integer, List<Integer>> listaAdjacencia, int numVertices, boolean isDirecionado) {
+        if(!isDirecionado) {
+            Set<Integer> visitados = new HashSet<>();
+            Queue<Integer> fila = new LinkedList<>();
 
-        // Função auxiliar para fazer a BFS e alcançar todos os vértices
-        Set<Integer> bfsVisitados = new HashSet<>();
-        Queue<Integer> bfsFila = new LinkedList<>();
-        int verticeInicial = vertices.iterator().next();
-        bfsFila.add(verticeInicial);
-        bfsVisitados.add(verticeInicial);
+            // Começa a busca a partir do vértice 0
+            int verticeInicial = 0;
+            fila.add(verticeInicial);
+            visitados.add(verticeInicial);
 
-        // Realiza a BFS a partir do vértice inicial
-        while (!bfsFila.isEmpty()) {
-            int vertice = bfsFila.poll();
-            for (int vizinho : listaAdjacencia.getOrDefault(vertice, new ArrayList<>())) {
-                if (!bfsVisitados.contains(vizinho)) {
-                    bfsVisitados.add(vizinho);
-                    bfsFila.add(vizinho);
-                }
-            }
-        }
-
-        if (!isDirecionado) {
-            // Verificação para grafos não direcionados
-            return bfsVisitados.size() == vertices.size(); // Se todos os vértices foram visitados, o grafo é conexo
-        } else {
-            // Verificação para grafos direcionados
-            // Verifica a conectividade direta
-            if (bfsVisitados.size() != vertices.size()) {
-                return false; // Se nem todos os vértices foram visitados, o grafo não é conexo
-            }
-
-            // Inverte as arestas para verificar a conectividade em sentido reverso
-            Map<Integer, List<Integer>> listaAdjacenciaInversa = new HashMap<>();
-            for (int vertice : listaAdjacencia.keySet()) {
-                listaAdjacenciaInversa.putIfAbsent(vertice, new ArrayList<>());
-                for (int vizinho : listaAdjacencia.get(vertice)) {
-                    listaAdjacenciaInversa.putIfAbsent(vizinho, new ArrayList<>());
-                    listaAdjacenciaInversa.get(vizinho).add(vertice);
-                }
-            }
-
-            Set<Integer> visitadosInverso = new HashSet<>();
-            Queue<Integer> filaInversa = new LinkedList<>();
-            filaInversa.add(verticeInicial);
-            visitadosInverso.add(verticeInicial);
-
-            // Realiza a BFS no grafo com arestas invertidas
-            while (!filaInversa.isEmpty()) {
-                int vertice = filaInversa.poll();
-                for (int vizinho : listaAdjacenciaInversa.getOrDefault(vertice, new ArrayList<>())) {
-                    if (!visitadosInverso.contains(vizinho)) {
-                        visitadosInverso.add(vizinho);
-                        filaInversa.add(vizinho);
+            while (!fila.isEmpty()) {
+                int vertice = fila.poll();
+                for (int vizinho : listaAdjacencia.getOrDefault(vertice, new ArrayList<>())) {
+                    if (!visitados.contains(vizinho)) {
+                        visitados.add(vizinho);
+                        fila.add(vizinho);
                     }
                 }
             }
 
-            // Verifica a conectividade reversa
-            return visitadosInverso.size() == vertices.size(); // Se todos os vértices foram visitados no grafo inverso, é fortemente conexo
+            // Verifica se todos os vértices foram visitados
+            return visitados.size() == numVertices;// Passo 1: Executar DFS a partir de um vértice
+        }else {
+            // Passo 1: Executar DFS a partir de um vértice
+            Set<Integer> visitados = new HashSet<>();
+            dfs(listaAdjacencia, 0, visitados);
+
+            if (visitados.size() != numVertices) return false;
+
+            // Passo 2: Inverter arestas e verificar conectividade novamente
+            Map<Integer, List<Integer>> listaAdjacenciaInvertida = inverterArestas(listaAdjacencia);
+            visitados.clear();
+            dfs(listaAdjacenciaInvertida, 0, visitados);
+
+            return visitados.size() == numVertices;
         }
+
+    }
+
+    /**
+     * Realiza uma busca em profundidade (Depth-First Search - DFS) em um grafo representado por uma lista de adjacência.
+     *
+     * @param listaAdjacencia Um mapa onde as chaves são vértices e os valores são listas de vértices adjacentes.
+     * @param vertice O vértice a partir do qual a busca em profundidade deve ser iniciada.
+     * @param visitados Um conjunto que mantém o controle dos vértices já visitados durante a busca.
+     */
+    private static void dfs(Map<Integer, List<Integer>> listaAdjacencia, int vertice, Set<Integer> visitados) {
+        visitados.add(vertice);
+        for (int vizinho : listaAdjacencia.getOrDefault(vertice, new ArrayList<>())) {
+            if (!visitados.contains(vizinho)) {
+                dfs(listaAdjacencia, vizinho, visitados);
+            }
+        }
+    }
+
+    /**
+     * Inverte as arestas de um grafo representado por uma lista de adjacência.
+     * Para um grafo direcionado, este método troca a direção de todas as arestas.
+     *
+     * @param listaAdjacencia Um mapa onde as chaves são vértices e os valores são listas de vértices adjacentes.
+     * @return Um novo mapa onde as arestas são invertidas em relação ao grafo original.
+     */
+    private static Map<Integer, List<Integer>> inverterArestas(Map<Integer, List<Integer>> listaAdjacencia) {
+        Map<Integer, List<Integer>> invertido = new HashMap<>();
+        for (Map.Entry<Integer, List<Integer>> entry : listaAdjacencia.entrySet()) {
+            int vertice = entry.getKey();
+            List<Integer> vizinhos = entry.getValue();
+            if (!invertido.containsKey(vertice)) {
+                invertido.put(vertice, new ArrayList<>());
+            }
+            for (int vizinho : vizinhos) {
+                if (!invertido.containsKey(vizinho)) {
+                    invertido.put(vizinho, new ArrayList<>());
+                }
+                invertido.get(vizinho).add(vertice);
+            }
+        }
+        return invertido;
     }
 
     /**
      * Verifica se o grafo é bipartido.
      *
-     * @param listaAdjacencia Mapa de listas de adjacência do grafo.
-     * @param isDirecionado Indica se o grafo é direcionado (true) ou não direcionado (false).
+     * @param listaAdjacencia Mapa de listas de adjacência do grafo
+     * @param direcionado Verifica se o grafo é direcionado
      * @return true se o grafo for bipartido, false caso contrário.
      */
-    public static Boolean verificarBipartido(Map<Integer, List<Integer>> listaAdjacencia, boolean isDirecionado) {
-        if (isDirecionado) {
-            return false; // Bipartição não é aplicável para grafos direcionados
-        }
+    private static Boolean verificarBipartido(Map<Integer, List<Integer>> listaAdjacencia, boolean direcionado) {
+        Map<Integer, Integer> cores = new HashMap<>(); // Mapeia o vértice para sua cor (0 ou 1)
 
-        // Mapa para armazenar a cor de cada vértice
-        Map<Integer, Integer> cores = new HashMap<>();
-
-        for (int vertice : listaAdjacencia.keySet()) {
-            // Se o vértice ainda não foi visitado
+        for (Integer vertice : listaAdjacencia.keySet()) {
             if (!cores.containsKey(vertice)) {
-                Queue<Integer> fila = new LinkedList<>();
-                fila.add(vertice);
-                cores.put(vertice, 0); // Atribui a cor 0 ao vértice inicial
+                if (!bipartidoBFS(listaAdjacencia, vertice, cores, direcionado)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
-                while (!fila.isEmpty()) {
-                    int atual = fila.poll();
-                    for (int vizinho : listaAdjacencia.get(atual)) {
-                        if (!cores.containsKey(vizinho)) {
-                            // Atribui a cor oposta ao vizinho
-                            cores.put(vizinho, 1 - cores.get(atual));
-                            fila.add(vizinho);
-                        } else if (cores.get(vizinho).equals(cores.get(atual))) {
-                            // Se um vizinho tem a mesma cor que o vértice atual, o grafo não é bipartido
-                            return false;
-                        }
+    /**
+     * Verifica se um grafo é bipartido usando busca em largura (BFS).
+     * Um grafo é bipartido se é possível colorir seus vértices com duas cores de forma que
+     * nenhum par de vértices adjacentes compartilhem a mesma cor.
+     *
+     * @param listaAdjacencia Um mapa onde as chaves são vértices e os valores são listas de vértices adjacentes.
+     * @param start O vértice a partir do qual a busca em largura deve ser iniciada.
+     * @param cores Um mapa que associa cada vértice a uma cor (0 ou 1). Inicialmente, este mapa está vazio.
+     * @param direcionado Um valor booleano indicando se o grafo é direcionado (true) ou não direcionado (false).
+     * @return Um valor booleano indicando se o grafo é bipartido (true) ou não (false).
+     */
+    private static Boolean bipartidoBFS(Map<Integer, List<Integer>> listaAdjacencia, int start, Map<Integer, Integer> cores, boolean direcionado) {
+        Queue<Integer> fila = new LinkedList<>();
+        fila.add(start);
+        cores.put(start, 0); // Começa com a cor 0
+
+        while (!fila.isEmpty()) {
+            int vertice = fila.poll();
+            int corAtual = cores.get(vertice);
+
+            for (int vizinho : listaAdjacencia.getOrDefault(vertice, new ArrayList<>())) {
+                if (!cores.containsKey(vizinho)) {
+                    // Atribui a cor oposta ao vizinho
+                    cores.put(vizinho, 1 - corAtual);
+                    fila.add(vizinho);
+                } else if (cores.get(vizinho).equals(corAtual)) {
+                    // Encontrou um conflito de cores, indicando que o grafo não é bipartido
+                    return false;
+                }
+                // Se for não direcionado, precisamos verificar a aresta de volta
+                if (!direcionado) {
+                    if (!cores.containsKey(vertice)) {
+                        cores.put(vertice, 1 - cores.get(vizinho));
+                    } else if (cores.get(vertice).equals(cores.get(vizinho))) {
+                        return false;
                     }
                 }
             }
         }
-        return true; // O grafo é bipartido se não houver conflitos de cores
+        return true;
     }
 
     /**
@@ -242,7 +342,7 @@ public class Main {
      * @param isDirecionado Indica se o grafo é direcionado (true) ou não direcionado (false).
      * @return true se o grafo for euleriano, false caso contrário.
      */
-    public static Boolean verificarEuleriano(Map<Integer, List<Integer>> listaAdjacencia, boolean isDirecionado) {
+    public static boolean verificarEuleriano(Map<Integer, List<Integer>> listaAdjacencia, boolean isDirecionado) {
         if (isDirecionado) {
             // Verifica se o grafo é euleriano (direcionado)
             Map<Integer, Integer> grauEntrada = new HashMap<>();
@@ -265,19 +365,50 @@ public class Main {
 
             return true; // O grafo é euleriano se todos os vértices tiverem grau de entrada igual ao grau de saída
         } else {
-            // Verifica se o grafo é euleriano (não direcionado)
             int impares = 0;
 
             // Conta o número de vértices com grau ímpar
             for (int vertice : listaAdjacencia.keySet()) {
-                if (listaAdjacencia.get(vertice).size() % 2 != 0) {
+                if (calcularGrauGrafoNaoDirecionado(listaAdjacencia, vertice) % 2 != 0) {
                     impares++;
                 }
             }
 
-            return impares == 0; // O grafo é euleriano se todos os vértices tiverem grau par
+            // Verifica a conectividade do grafo
+            boolean conectado = isConectado(listaAdjacencia);
+
+            // O grafo é euleriano se todos os vértices tiverem grau par e o grafo for conexo
+            return impares == 0 && conectado;
         }
     }
+
+    private static boolean isConectado(Map<Integer, List<Integer>> listaAdjacencia) {
+        if (listaAdjacencia.isEmpty()) {
+            return false; // Um grafo vazio não é conectado
+        }
+
+        Set<Integer> visitados = new HashSet<>();
+        Deque<Integer> stack = new ArrayDeque<>();
+
+        // Pegue o primeiro vértice
+        int primeiroVertice = listaAdjacencia.keySet().iterator().next();
+        stack.push(primeiroVertice);
+
+        while (!stack.isEmpty()) {
+            int v = stack.pop();
+            if (visitados.add(v)) {
+                for (int vizinho : listaAdjacencia.get(v)) {
+                    if (!visitados.contains(vizinho)) {
+                        stack.push(vizinho);
+                    }
+                }
+            }
+        }
+
+        // Verifica se todos os vértices foram visitados
+        return visitados.size() == listaAdjacencia.size();
+    }
+
 
     /**
      * Verifica se o grafo possui ciclo usando busca em profundidade (DFS).
@@ -334,15 +465,18 @@ public class Main {
      * @return String formatada contendo os componentes conexos.
      */
     public static String listarComponentesConexas(Map<Integer, List<Integer>> listaAdjacencia) {
-        List<List<Integer>> componentes = new ArrayList<>();
+        // Usado para rastrear quais vértices já foram visitados
         Set<Integer> visitados = new HashSet<>();
+        // Lista para armazenar todos os componentes conexos encontrados
+        List<List<Integer>> componentes = new ArrayList<>();
 
-        // Ordena as chaves do mapa para garantir a ordem lexicográfica
+        // Ordena os vértices para garantir a ordem lexicográfica
         List<Integer> vertices = new ArrayList<>(listaAdjacencia.keySet());
         Collections.sort(vertices);
 
         for (int vertice : vertices) {
             if (!visitados.contains(vertice)) {
+                // Cria uma nova lista para armazenar o componente atual
                 List<Integer> componente = new ArrayList<>();
                 Queue<Integer> fila = new LinkedList<>();
                 fila.add(vertice);
@@ -351,6 +485,7 @@ public class Main {
                 while (!fila.isEmpty()) {
                     int atual = fila.poll();
                     componente.add(atual);
+                    // Adiciona todos os vizinhos não visitados na fila
                     for (int vizinho : listaAdjacencia.get(atual)) {
                         if (!visitados.contains(vizinho)) {
                             visitados.add(vizinho);
@@ -358,13 +493,18 @@ public class Main {
                         }
                     }
                 }
+                // Ordena o componente atual e adiciona à lista de componentes
                 Collections.sort(componente);
                 componentes.add(componente);
             }
         }
 
+        // Se há apenas um componente, o grafo é totalmente conexo
+        if (componentes.size() == 1) {
+            return "-1";
+        }
+
         // Ordena a lista de componentes em ordem lexicográfica
-        // Utiliza um comparador para comparar listas lexicograficamente
         componentes.sort((c1, c2) -> {
             int minLength = Math.min(c1.size(), c2.size());
             for (int i = 0; i < minLength; i++) {
@@ -377,12 +517,28 @@ public class Main {
         // Converte a lista de componentes em uma string formatada
         StringBuilder sb = new StringBuilder();
         for (List<Integer> componente : componentes) {
-            sb.append(formatarListaComEspacos(componente)).append("\n");
+            sb.append(formatarListaComEspacos(componente)).append(" ");
         }
 
         return sb.toString().trim(); // Remove a última nova linha desnecessária
     }
 
+    /**
+     * Calcula o grau de um vértice específico em um grafo não direcionado.
+     * @param listaAdjacencia Mapa que representa a lista de adjacência do grafo.
+     * @param vertice O vértice para o qual o grau deve ser calculado.
+     * @return O grau do vértice especificado. Retorna -1 se o vértice não estiver presente no grafo.
+     */
+    public static int calcularGrauGrafoNaoDirecionado(Map<Integer, List<Integer>> listaAdjacencia, int vertice) {
+        // Verifica se o vértice está presente na lista de adjacência
+        if (!listaAdjacencia.containsKey(vertice)) {
+            return -1; // Retorna -1 se o vértice não estiver presente
+        }
+
+        // Calcula o grau do vértice
+        List<Integer> vizinhos = listaAdjacencia.get(vertice);
+        return vizinhos.size(); // O grau do vértice é o número de vizinhos
+    }
 
     /**
      * Lista os componentes fortemente conexos de um grafo utilizando o algoritmo de Kosaraju.
@@ -391,91 +547,107 @@ public class Main {
      * @param listaAdjacencia Mapa que representa a lista de adjacência do grafo (vértices -> lista de vizinhos).
      * @return Lista de listas de inteiros, onde cada lista representa um componente fortemente conexo.
      */
-    public static List<List<Integer>> listarComponentesFortementeConexas(Map<Integer, List<Integer>> listaAdjacencia) {
+    public static String listarComponentesFortementeConexas(Map<Integer, List<Integer>> listaAdjacencia) {
         List<List<Integer>> componentes = new ArrayList<>();
-        Stack<Integer> pilha = new Stack<>();
         Set<Integer> visitados = new HashSet<>();
+        Stack<Integer> pilha = new Stack<>();
+        Map<Integer, List<Integer>> grafoInvertido = new HashMap<>();
 
-        // Passo 1: Realizar uma DFS para empilhar os vértices na ordem do término da visita.
+        // Inicializa o grafo invertido
         for (int vertice : listaAdjacencia.keySet()) {
-            if (!visitados.contains(vertice)) {
-                dfsEmpilhar(vertice, visitados, listaAdjacencia, pilha);
+            grafoInvertido.put(vertice, new ArrayList<>());
+        }
+        for (int vertice : listaAdjacencia.keySet()) {
+            for (int vizinho : listaAdjacencia.get(vertice)) {
+                grafoInvertido.get(vizinho).add(vertice);
             }
         }
 
-        // Passo 2: Transpor o grafo (inverter as direções das arestas).
-        Map<Integer, List<Integer>> grafoTransposto = transporGrafo(listaAdjacencia);
+        // Passo 1: Realiza um DFS e preenche a pilha com a ordem de término
+        for (int vertice : listaAdjacencia.keySet()) {
+            if (!visitados.contains(vertice)) {
+                dfsParaPilha(listaAdjacencia, vertice, visitados, pilha);
+            }
+        }
 
-        // Passo 3: Realizar uma DFS no grafo transposto na ordem dos vértices empilhados.
+        // Passo 2: Realiza um DFS no grafo invertido usando a ordem da pilha
         visitados.clear();
         while (!pilha.isEmpty()) {
             int vertice = pilha.pop();
             if (!visitados.contains(vertice)) {
                 List<Integer> componente = new ArrayList<>();
-                dfsComponentes(vertice, visitados, grafoTransposto, componente);
-                Collections.sort(componente); // Ordena os vértices do componente para garantir consistência.
+                dfsParaComponente(grafoInvertido, vertice, visitados, componente);
                 componentes.add(componente);
             }
         }
 
-        return componentes;
+        // Ordena a lista de componentes em ordem lexicográfica
+        componentes.sort((c1, c2) -> {
+            int minLength = Math.min(c1.size(), c2.size());
+            for (int i = 0; i < minLength; i++) {
+                int comp = Integer.compare(c1.get(i), c2.get(i));
+                if (comp != 0) return comp;
+            }
+            return Integer.compare(c1.size(), c2.size());
+        });
+
+        // Converte a lista de componentes em uma string formatada
+        StringBuilder sb = new StringBuilder();
+        for (List<Integer> componente : componentes) {
+            sb.append(formatarListaComEspacos(componente)).append(" ");
+        }
+
+        return sb.toString().trim(); // Remove a última nova linha desnecessária
     }
 
     /**
-     * Realiza uma busca em profundidade (DFS) e empilha os vértices na ordem de término.
+     * Realiza uma busca em profundidade (DFS) no grafo e empilha os vértices na ordem de conclusão.
      *
-     * @param vertice         O vértice atual sendo visitado.
-     * @param visitados       Conjunto de vértices que já foram visitados.
-     * @param listaAdjacencia Mapa que representa a lista de adjacência do grafo.
-     * @param pilha           Pilha onde os vértices são empilhados na ordem de término.
+     * @param grafo O grafo representado como um mapa de listas de adjacência, onde a chave é um vértice
+     *              e o valor é a lista de vértices adjacentes.
+     * @param vertice O vértice a partir do qual a busca em profundidade é iniciada.
+     * @param visitados O conjunto de vértices que já foram visitados durante a busca.
+     * @param pilha A pilha onde os vértices são empilhados após a visita aos seus vizinhos.
      */
-    private static void dfsEmpilhar(int vertice, Set<Integer> visitados, Map<Integer, List<Integer>> listaAdjacencia, Stack<Integer> pilha) {
-        // Marca o vértice como visitado
+    private static void dfsParaPilha(Map<Integer, List<Integer>> grafo, int vertice, Set<Integer> visitados, Stack<Integer> pilha) {
+        // Marca o vértice atual como visitado
         visitados.add(vertice);
-        // Itera sobre todos os vizinhos do vértice
-        for (int vizinho : listaAdjacencia.get(vertice)) {
-            // Se o vizinho ainda não foi visitado, realiza a chamada recursiva
+
+        // Recorre pelos vizinhos do vértice atual
+        for (int vizinho : grafo.get(vertice)) {
+            // Se o vizinho não foi visitado, realiza uma chamada recursiva
             if (!visitados.contains(vizinho)) {
-                dfsEmpilhar(vizinho, visitados, listaAdjacencia, pilha);
+                dfsParaPilha(grafo, vizinho, visitados, pilha);
             }
         }
-        pilha.push(vertice); // Adiciona o vértice à pilha após visitar todos os seus vizinhos.
+
+        // Empilha o vértice após ter visitado todos os seus vizinhos
+        pilha.push(vertice);
     }
 
     /**
-     * Realiza uma busca em profundidade (DFS) no grafo transposto para encontrar os componentes fortemente conexos.
+     * Realiza uma busca em profundidade (DFS) no grafo para encontrar todos os vértices em um componente conexo.
      *
-     * @param vertice         O vértice atual sendo visitado.
-     * @param visitados       Conjunto de vértices que já foram visitados.
-     * @param listaAdjacencia Mapa que representa a lista de adjacência do grafo transposto.
-     * @param componente      Lista onde os vértices do componente atual são armazenados.
+     * @param grafo O grafo representado como um mapa de listas de adjacência, onde a chave é um vértice
+     *              e o valor é a lista de vértices adjacentes.
+     * @param vertice O vértice a partir do qual a busca em profundidade é iniciada.
+     * @param visitados O conjunto de vértices que já foram visitados durante a busca.
+     * @param componente A lista onde os vértices do componente conexo são armazenados.
      */
-    private static void dfsComponentes(int vertice, Set<Integer> visitados, Map<Integer, List<Integer>> listaAdjacencia, List<Integer> componente) {
+    private static void dfsParaComponente(Map<Integer, List<Integer>> grafo, int vertice, Set<Integer> visitados, List<Integer> componente) {
+        // Marca o vértice atual como visitado
         visitados.add(vertice);
-        componente.add(vertice); // Adiciona o vértice ao componente atual.
-        for (int vizinho : listaAdjacencia.get(vertice)) {
-            if (!visitados.contains(vizinho)) {
-                dfsComponentes(vizinho, visitados, listaAdjacencia, componente);
-            }
-        }
-    }
 
-    /**
-     * Transpõe o grafo, ou seja, inverte as direções das arestas.
-     *
-     * @param listaAdjacencia Mapa que representa a lista de adjacência do grafo original.
-     * @return Mapa que representa a lista de adjacência do grafo transposto.
-     */
-    private static Map<Integer, List<Integer>> transporGrafo(Map<Integer, List<Integer>> listaAdjacencia) {
-        Map<Integer, List<Integer>> grafoTransposto = new HashMap<>();
-        for (int vertice : listaAdjacencia.keySet()) {
-            grafoTransposto.putIfAbsent(vertice, new ArrayList<>());
-            for (int vizinho : listaAdjacencia.get(vertice)) {
-                grafoTransposto.putIfAbsent(vizinho, new ArrayList<>());
-                grafoTransposto.get(vizinho).add(vertice); // Adiciona a aresta inversa no grafo transposto.
+        // Adiciona o vértice ao componente conexo
+        componente.add(vertice);
+
+        // Recorre pelos vizinhos do vértice atual
+        for (int vizinho : grafo.get(vertice)) {
+            // Se o vizinho não foi visitado, realiza uma chamada recursiva
+            if (!visitados.contains(vizinho)) {
+                dfsParaComponente(grafo, vizinho, visitados, componente);
             }
         }
-        return grafoTransposto;
     }
 
     /**
@@ -673,73 +845,56 @@ public class Main {
         return String.join(" ", resultado); // Constrói a string representando as arestas ponte.
     }
 
-// Função auxiliar para formatar listas encadeadas como uma string com espaços entre os valores
     /**
-     * Formata uma lista de listas de inteiros como uma string, onde cada sublista é representada por seus elementos separados por espaço.
-     *
-     * @param listas Lista de listas de inteiros a serem formatadas.
-     * @return String representando as listas formatadas com espaços entre os elementos.
+     * Gera a árvore de profundidade a partir do grafo.
+     * @param listaAdjacencia Mapa que representa a lista de adjacência do grafo.
+     * @param idsArestas Mapa que relaciona arestas com seus IDs.
+     * @return String contendo os IDs das arestas da árvore de profundidade.
      */
-    public static String formatarListasEncadeadas(List<List<Integer>> listas) {
-        StringBuilder resultado = new StringBuilder();
-
-        for (List<Integer> lista : listas) {
-            if (!lista.isEmpty()) {
-                // Ordena os elementos da lista para garantir uma ordem consistente
-                Collections.sort(lista);
-                resultado.append(lista.get(0)).append(" ").append(lista.get(1)).append("\n");
-            }
-        }
-
-        return resultado.toString().trim(); // Remove o espaço ou nova linha extra no final
-    }
-
-// Função para gerar árvore de profundidade usando DFS
-    /**
-     * Gera uma árvore de profundidade (DFS) para o grafo representado por uma lista de adjacência.
-     *
-     * @param listaAdjacencia Lista de adjacência que representa o grafo.
-     * @param idsArestas Mapa que relaciona as arestas aos seus IDs.
-     * @return String contendo os IDs das arestas usadas na árvore de profundidade.
-     */
-    private static String gerarArvoreProfundidade(Map<Integer, List<Integer>> listaAdjacencia, Map<List<Integer>, Integer> idsArestas) {
-        StringBuilder resultado = new StringBuilder();
+    public static String gerarArvoreProfundidade(Map<Integer, List<Integer>> listaAdjacencia, Map<List<Integer>, Integer> idsArestas) {
         Set<Integer> visitados = new HashSet<>();
-        List<Integer> arestasUsadas = new ArrayList<>();
+        Set<Integer> arestasArvore = new LinkedHashSet<>(); // Usar LinkedHashSet para evitar duplicatas e manter a ordem de inserção
+        Stack<Integer> pilha = new Stack<>();
+        Map<Integer, Integer> pai = new HashMap<>(); // Mapa para rastrear o pai de cada vértice
 
-        dfsProfundidade(0, listaAdjacencia, visitados, arestasUsadas, idsArestas);
+        // Inicia a travessia a partir do vértice 0
+        pilha.push(0);
+        visitados.add(0);
+        pai.put(0, null);
 
-        for (Integer id : arestasUsadas) {
-            resultado.append(id).append(" ");
-        }
+        while (!pilha.isEmpty()) {
+            int vertice = pilha.pop();
+            List<Integer> vizinhos = new ArrayList<>(listaAdjacencia.get(vertice));
+            Collections.sort(vizinhos); // Ordena para garantir a ordem lexicográfica
 
-        return !resultado.isEmpty() ? resultado.toString().trim() : "-1";
-    }
+            for (int vizinho : vizinhos) {
+                if (!visitados.contains(vizinho)) {
+                    // Adiciona a aresta à lista de arestas da árvore
+                    List<Integer> arestaDireta = Arrays.asList(vertice, vizinho);
+                    List<Integer> arestaInversa = Arrays.asList(vizinho, vertice);
 
-    /**
-     * Realiza uma busca em profundidade (DFS) em um grafo e registra as arestas usadas.
-     *
-     * @param u Vértice atual na DFS.
-     * @param listaAdjacencia Lista de adjacência que representa o grafo.
-     * @param visitados Conjunto de vértices visitados durante a DFS.
-     * @param arestasUsadas Lista para armazenar os IDs das arestas usadas.
-     * @param idsArestas Mapa que relaciona as arestas aos seus IDs.
-     */
-    private static void dfsProfundidade(int u, Map<Integer, List<Integer>> listaAdjacencia, Set<Integer> visitados, List<Integer> arestasUsadas, Map<List<Integer>, Integer> idsArestas) {
-        visitados.add(u);
+                    if (idsArestas.containsKey(arestaDireta)) {
+                        arestasArvore.add(idsArestas.get(arestaDireta));
+                    } else if (idsArestas.containsKey(arestaInversa)) {
+                        // Para grafos não direcionados, verifica a aresta no sentido inverso
+                        arestasArvore.add(idsArestas.get(arestaInversa));
+                    }
 
-        for (int v : listaAdjacencia.get(u)) {
-            if (!visitados.contains(v)) {
-                List<Integer> aresta = Arrays.asList(u, v);
-                if (idsArestas.containsKey(aresta)) {
-                    arestasUsadas.add(idsArestas.get(aresta));
+                    // Marca o vizinho como visitado e o adiciona à pilha
+                    visitados.add(vizinho);
+                    pilha.push(vizinho);
+                    pai.put(vizinho, vertice);
                 }
-                dfsProfundidade(v, listaAdjacencia, visitados, arestasUsadas, idsArestas);
             }
         }
+
+        // Ordena os IDs das arestas para a saída correta
+        List<Integer> sortedArestas = new ArrayList<>(arestasArvore);
+        Collections.sort(sortedArestas);
+
+        return String.join(" ", sortedArestas.stream().map(String::valueOf).toArray(String[]::new));
     }
 
-// Função para gerar árvore de largura usando BFS
     /**
      * Gera uma árvore de largura (BFS) para o grafo representado por uma lista de adjacência.
      *
@@ -894,7 +1049,7 @@ public class Main {
         // Inicializa as estruturas de dados para o algoritmo de Dijkstra
         Map<Integer, Integer> distancias = new HashMap<>();
         Map<Integer, Integer> predecessores = new HashMap<>();
-        PriorityQueue<Node> prioridade = new PriorityQueue<>(Comparator.comparingInt(node -> node.distancia));
+        PriorityQueue<No> prioridade = new PriorityQueue<>(Comparator.comparingInt(no -> no.distancia));
 
         // Inicializa os valores das distâncias e predecessores
         for (int vertice : adj.keySet()) {
@@ -902,10 +1057,10 @@ public class Main {
             predecessores.put(vertice, null);
         }
         distancias.put(origem, 0);
-        prioridade.add(new Node(origem, 0));
+        prioridade.add(new No(origem, 0));
 
         while (!prioridade.isEmpty()) {
-            Node atual = prioridade.poll();
+            No atual = prioridade.poll();
 
             // Se o nó atual é o destino, construa o caminho e retorne
             if (atual.id == destino) {
@@ -920,7 +1075,7 @@ public class Main {
                 if (novaDistancia < distancias.get(vizinho)) {
                     distancias.put(vizinho, novaDistancia);
                     predecessores.put(vizinho, atual.id);
-                    prioridade.add(new Node(vizinho, novaDistancia));
+                    prioridade.add(new No(vizinho, novaDistancia));
                 }
             }
         }
@@ -1238,7 +1393,7 @@ public class Main {
     /**
      * Classe auxiliar para representar os nós da fila de prioridade com seus identificadores e distâncias.
      */
-    private static class Node {
+    private static class No {
         int id;
         int distancia;
 
@@ -1248,10 +1403,9 @@ public class Main {
          * @param id O identificador do nó.
          * @param distancia A distância associada ao nó.
          */
-        Node(int id, int distancia) {
+        No(int id, int distancia) {
             this.id = id;
             this.distancia = distancia;
         }
     }
 }
-
