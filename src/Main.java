@@ -7,6 +7,7 @@ public class Main {
         // Leitura do número de vértices e arestas
         int numVertices = scanner.nextInt();
         int numArestas = scanner.nextInt();
+        scanner.nextLine();
 
         // Leitura do tipo de grafo
         String tipoGrafo = scanner.next();
@@ -30,6 +31,7 @@ public class Main {
             int verticeU = scanner.nextInt();
             int verticeV = scanner.nextInt();
             int pesoAresta = scanner.nextInt();
+            scanner.nextLine();
 
             // Adiciona a aresta na lista de adjacência
             if (listaAdjacencia.containsKey(verticeU)) {
@@ -56,28 +58,41 @@ public class Main {
         }
 
         // Execução das funções solicitadas
-        System.out.println(verificarConexo(listaAdjacencia, vertices));
+        if(isDirecionado) {
+            System.out.println(verificarConexo(listaAdjacencia, vertices));
+        }
         System.out.println(verificarBipartido(listaAdjacencia));
         System.out.println(verificarEuleriano(listaAdjacencia));
         System.out.println(possuiCiclo(listaAdjacencia));
         System.out.println(listarComponentesConexas(listaAdjacencia));
-        System.out.println(listarComponentesFortementeConexas(listaAdjacencia));
+        if(isDirecionado) {
+            System.out.println(formatarListasEncadeadas(listarComponentesFortementeConexas(listaAdjacencia)));
+        }
         System.out.println(listarTrilhaEuleriana(listaAdjacencia));
         System.out.println(listarVerticesArticulacao(listaAdjacencia));
-        System.out.println(listarArestasPonte(listaAdjacencia));
+        System.out.println(formatarListasEncadeadas(listarArestasPonte(listaAdjacencia)));
         System.out.println(gerarArvoreProfundidade(listaAdjacencia, idsArestas));
         System.out.println(gerarArvoreLargura(listaAdjacencia, idsArestas));
         System.out.println(gerarArvoreGeradoraMinima(listaAdjacencia, pesos, idsArestas));
-        System.out.println(ordenarTopologicamente(listaAdjacencia, isDirecionado));
-        System.out.println(calcularCaminhoMinimo(listaAdjacencia, pesos, 0, numVertices - 1));
-        System.out.println(calcularFluxoMaximo(listaAdjacencia, pesos, 0, numVertices - 1));
-        System.out.println(gerarFechoTransitivo(listaAdjacencia, 0));
+        if(isDirecionado) { // Ordenação topológica não está disponível para grafos não direcionados
+            System.out.println(ordenarTopologicamente(listaAdjacencia));
+        }
+        if (vertices.contains(0) && vertices.contains(numVertices - 1)) {
+            if (podeCalcularCaminhoMinimo(listaAdjacencia, 0, numVertices - 1)) {
+                System.out.println(calcularCaminhoMinimo(listaAdjacencia, pesos, 0, numVertices - 1));
+            }
+        }
+        if(isDirecionado) {  // Fluxo maximo e Fecho transitivo não está disponível para grafos não direcionados
+            System.out.println(calcularFluxoMaximo(listaAdjacencia, pesos, 0, numVertices - 1));
+            System.out.println(gerarFechoTransitivo(listaAdjacencia, 0));
+        }
+
 
         scanner.close();
     }
 
     // Função para verificar se o grafo é conexo usando BFS
-    public static boolean verificarConexo(Map<Integer, List<Integer>> listaAdjacencia, Set<Integer> vertices) {
+    public static Integer verificarConexo(Map<Integer, List<Integer>> listaAdjacencia, Set<Integer> vertices) {
         Set<Integer> visitados = new HashSet<>();
         Queue<Integer> fila = new LinkedList<>();
 
@@ -95,11 +110,11 @@ public class Main {
             }
         }
 
-        return visitados.size() == vertices.size();
+        return visitados.size() == vertices.size() ? 1 : 0;
     }
 
     // Função para verificar se o grafo é bipartido usando BFS
-    public static boolean verificarBipartido(Map<Integer, List<Integer>> listaAdjacencia) {
+    public static Integer verificarBipartido(Map<Integer, List<Integer>> listaAdjacencia) {
         Map<Integer, Integer> cores = new HashMap<>();
 
         for (int vertice : listaAdjacencia.keySet()) {
@@ -115,17 +130,17 @@ public class Main {
                             cores.put(vizinho, 1 - cores.get(atual));
                             fila.add(vizinho);
                         } else if (cores.get(vizinho).equals(cores.get(atual))) {
-                            return false;
+                            return 0;
                         }
                     }
                 }
             }
         }
-        return true;
+        return 1;
     }
 
     // Função para verificar se o grafo é Euleriano
-    public static boolean verificarEuleriano(Map<Integer, List<Integer>> listaAdjacencia) {
+    public static Integer verificarEuleriano(Map<Integer, List<Integer>> listaAdjacencia) {
         int impares = 0;
 
         for (int vertice : listaAdjacencia.keySet()) {
@@ -134,18 +149,18 @@ public class Main {
             }
         }
 
-        return impares == 0; // Euleriano se todos os vértices têm grau par
+        return impares == 0 ? 1 : 0; // Euleriano se todos os vértices têm grau par
     }
 
     // Função para verificar se o grafo possui ciclo usando DFS
-    public static boolean possuiCiclo(Map<Integer, List<Integer>> listaAdjacencia) {
+    public static Integer possuiCiclo(Map<Integer, List<Integer>> listaAdjacencia) {
         Set<Integer> visitados = new HashSet<>();
         for (int vertice : listaAdjacencia.keySet()) {
             if (!visitados.contains(vertice) && dfsCiclo(vertice, -1, visitados, listaAdjacencia)) {
-                return true;
+                return 1;
             }
         }
-        return false;
+        return 0;
     }
 
     private static boolean dfsCiclo(int vertice, int pai, Set<Integer> visitados, Map<Integer, List<Integer>> listaAdjacencia) {
@@ -163,11 +178,15 @@ public class Main {
     }
 
     // Função para listar componentes conexas usando BFS
-    public static List<List<Integer>> listarComponentesConexas(Map<Integer, List<Integer>> listaAdjacencia) {
+    public static String listarComponentesConexas(Map<Integer, List<Integer>> listaAdjacencia) {
         List<List<Integer>> componentes = new ArrayList<>();
         Set<Integer> visitados = new HashSet<>();
 
-        for (int vertice : listaAdjacencia.keySet()) {
+        // Ordena as chaves do mapa para garantir a ordem lexicográfica
+        List<Integer> vertices = new ArrayList<>(listaAdjacencia.keySet());
+        Collections.sort(vertices);
+
+        for (int vertice : vertices) {
             if (!visitados.contains(vertice)) {
                 List<Integer> componente = new ArrayList<>();
                 Queue<Integer> fila = new LinkedList<>();
@@ -189,8 +208,26 @@ public class Main {
             }
         }
 
-        return componentes;
+        // Ordena a lista de componentes em ordem lexicográfica
+        // Utiliza um comparador para comparar listas lexicograficamente
+        componentes.sort((c1, c2) -> {
+            int minLength = Math.min(c1.size(), c2.size());
+            for (int i = 0; i < minLength; i++) {
+                int comp = Integer.compare(c1.get(i), c2.get(i));
+                if (comp != 0) return comp;
+            }
+            return Integer.compare(c1.size(), c2.size());
+        });
+
+        // Converte a lista de componentes em uma string formatada
+        StringBuilder sb = new StringBuilder();
+        for (List<Integer> componente : componentes) {
+            sb.append(formatarListaComEspacos(componente)).append("\n");
+        }
+
+        return sb.toString().trim(); // Remove a última nova linha desnecessária
     }
+
 
     // Função para listar componentes fortemente conexas usando o algoritmo de Kosaraju
     public static List<List<Integer>> listarComponentesFortementeConexas(Map<Integer, List<Integer>> listaAdjacencia) {
@@ -256,7 +293,7 @@ public class Main {
     }
 
     // Função para listar uma trilha Euleriana
-    public static List<Integer> listarTrilhaEuleriana(Map<Integer, List<Integer>> listaAdjacencia) {
+    public static String listarTrilhaEuleriana(Map<Integer, List<Integer>> listaAdjacencia) {
         LinkedList<Integer> trilha = new LinkedList<>();
         Map<Integer, Iterator<Integer>> iteradores = new HashMap<>();
         Stack<Integer> pilha = new Stack<>();
@@ -279,11 +316,11 @@ public class Main {
             }
         }
 
-        return trilha;
+        return construirString(trilha);
     }
 
     // Função para listar vértices de articulação usando DFS
-    public static List<Integer> listarVerticesArticulacao(Map<Integer, List<Integer>> listaAdjacencia) {
+    public static String listarVerticesArticulacao(Map<Integer, List<Integer>> listaAdjacencia) {
         Set<Integer> articulacoes = new HashSet<>();
         Map<Integer, Integer> descoberta = new HashMap<>();
         Map<Integer, Integer> menor = new HashMap<>();
@@ -298,7 +335,7 @@ public class Main {
 
         List<Integer> resultado = new ArrayList<>(articulacoes);
         Collections.sort(resultado);
-        return resultado;
+        return construirString(resultado);
     }
 
     private static void dfsArticulacao(int vertice, int pai, Set<Integer> visitados, Map<Integer, Integer> descoberta,
@@ -371,6 +408,16 @@ public class Main {
             }
         }
     }
+
+    // Função auxiliar para formatar listas encadeadas como uma string com espaços entre os valores
+    public static String formatarListasEncadeadas(List<List<Integer>> pontes) {
+        StringBuilder sb = new StringBuilder();
+        for (List<Integer> aresta : pontes) {
+            sb.append(aresta.get(0)).append(" ").append(aresta.get(1)).append("\n");
+        }
+        return sb.toString().trim();
+    }
+
 
     // Função para gerar árvore de profundidade usando DFS
     private static String gerarArvoreProfundidade(Map<Integer, List<Integer>> listaAdjacencia, Map<List<Integer>, Integer> idsArestas) {
@@ -478,11 +525,7 @@ public class Main {
     }
 
     // 1. Ordenação Topológica
-    public static List<Integer> ordenarTopologicamente(Map<Integer, List<Integer>> listaAdjacencia, boolean isDirecionado) {
-        if (!isDirecionado) {
-            // Ordenação topológica não está disponível para grafos não direcionados
-            return Collections.emptyList();
-        }
+    public static String ordenarTopologicamente(Map<Integer, List<Integer>> listaAdjacencia) {
 
         // Contagem de graus de entrada
         Map<Integer, Integer> grauEntrada = new HashMap<>();
@@ -517,13 +560,20 @@ public class Main {
 
         // Verifica se há um ciclo
         if (resultado.size() != listaAdjacencia.size()) {
-            return Collections.emptyList();
+            return ""; // Retorna uma string vazia se houver um ciclo
         }
-        return resultado;
+
+        // Construa a string representando a ordenação topológica
+        StringBuilder resultadoString = new StringBuilder();
+        for (Integer v : resultado) {
+            resultadoString.append(v).append(" ");
+        }
+
+        return resultadoString.toString().trim(); // Remove o espaço final extra
     }
 
     // 2. Caminho Mínimo
-    public static List<Integer> calcularCaminhoMinimo(Map<Integer, List<Integer>> listaAdjacencia, Map<List<Integer>, Integer> pesos, int origem, int destino) {
+    public static String calcularCaminhoMinimo(Map<Integer, List<Integer>> listaAdjacencia, Map<List<Integer>, Integer> pesos, int origem, int destino) {
         PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[1]));
         pq.add(new int[]{origem, 0});
 
@@ -559,12 +609,12 @@ public class Main {
         }
         Collections.reverse(caminho);
 
-        return caminho.size() == 1 && caminho.get(0) == origem ? Collections.emptyList() : caminho;
+        return construirString(caminho);
     }
 
 
     // 3. Fluxo Máximo
-    private static int calcularFluxoMaximo(Map<Integer, List<Integer>> listaAdjacencia, Map<List<Integer>, Integer> pesos, int origem, int destino) {
+    private static Integer calcularFluxoMaximo(Map<Integer, List<Integer>> listaAdjacencia, Map<List<Integer>, Integer> pesos, int origem, int destino) {
         Map<List<Integer>, Integer> capacidade = new HashMap<>(pesos);
         int fluxoMaximo = 0;
 
@@ -623,7 +673,7 @@ public class Main {
     }
 
     // 4. Fecho Transitivo
-    public static Set<Integer> gerarFechoTransitivo(Map<Integer, List<Integer>> listaAdjacencia, int verticeEscolhido) {
+    public static String gerarFechoTransitivo(Map<Integer, List<Integer>> listaAdjacencia, int verticeEscolhido) {
         Set<Integer> fecho = new HashSet<>();
         fecho.addAll(listaAdjacencia.keySet());
 
@@ -649,7 +699,61 @@ public class Main {
             }
         }
 
-        return resultado;
+        // Construa a string representando o fecho transitivo
+        StringBuilder fechoString = new StringBuilder();
+        for (Integer v : resultado) {
+            fechoString.append(v).append(" ");
+        }
+
+        return fechoString.toString().trim(); // Remove o espaço final extra
+    }
+
+    // Função para verificar se há um caminho entre os vértices usando BFS
+    private static boolean podeCalcularCaminhoMinimo(Map<Integer, List<Integer>> adj, int origem, int destino) {
+        if (origem == destino) return true; // Caminho trivial se origem e destino são o mesmo vértice
+
+        Set<Integer> visitados = new HashSet<>();
+        Queue<Integer> fila = new LinkedList<>();
+        fila.add(origem);
+        visitados.add(origem);
+
+        while (!fila.isEmpty()) {
+            int verticeAtual = fila.poll();
+
+            if (verticeAtual == destino) {
+                return true;
+            }
+
+            for (int vizinho : adj.getOrDefault(verticeAtual, Collections.emptyList())) {
+                if (!visitados.contains(vizinho)) {
+                    visitados.add(vizinho);
+                    fila.add(vizinho);
+                }
+            }
+        }
+        return false;
+    }
+
+    private static String construirString(List<Integer> list) {
+        // Construa a string representando o caminho
+        StringBuilder caminhoString = new StringBuilder();
+        for (Integer v : list) {
+            caminhoString.append(v).append(" ");
+        }
+
+        return caminhoString.toString().trim(); // Remove o espaço final extra
+    }
+
+
+    public static String formatarListaComEspacos(List<Integer> lista) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < lista.size(); i++) {
+            sb.append(lista.get(i));
+            if (i < lista.size() - 1) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
     }
 
     // Classe que implementa a estrutura de dados Union-Find (ou Disjoint Set Union).
